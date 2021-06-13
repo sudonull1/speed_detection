@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 import vehicles
 import pandas as pd
-from ccccc import estimateSpeed, trackMultipleObjects
+from speed import estimateSpeed, trackMultipleObjects
 import time
 
 cnt_up=0
