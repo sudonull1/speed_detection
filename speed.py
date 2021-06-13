@@ -12,21 +12,22 @@ WIDTH = 1280
 HEIGHT = 720
 
 
-def estimateSpeed(location1, location2, fps):
-	d_pixels = math.sqrt(math.pow(location2[0] - location1[0], 2) + math.pow(location2[1] - location1[1], 2))
+def getspeed(l1, l2, fps):
+	d_pixels = math.sqrt(math.pow(l2[0] - l1[0], 2) + math.pow(l2[1] - l1[1], 2))
 	# ppm = location2[2] / carWidht
+    #ppm == pixels per meter
 	ppm = 99
-	d_meters = d_pixels / ppm
+	dist_meter = d_pixels / ppm
 	#print("d_pixels=" + str(d_pixels), "d_meters=" + str(d_meters))
 	#fps = 30
-	speed = d_meters * fps * 3.6
+	speed = dist_meter * fps * 3.6
 	return speed
 	
 
 def trackMultipleObjects():
 	rectangleColor = (0, 255, 0)
 	frameCounter = 0
-	currentCarID = 0
+	curr_car_id = 0
 	fps = 0
 	
 	carTracker = {}
@@ -46,16 +47,16 @@ def trackMultipleObjects():
 			break
 		
 		image = cv2.resize(image, (WIDTH, HEIGHT))
-		resultImage = image.copy()
+		res_img = image.copy()
 		
 		frameCounter = frameCounter + 1
 		
 		carIDtoDelete = []
 
 		for carID in carTracker.keys():
-			trackingQuality = carTracker[carID].update(image)
+			track_qual = carTracker[carID].update(image)
 			
-			if trackingQuality < 7:
+			if track_qual < 7:
 				carIDtoDelete.append(carID)
 				
 		for carID in carIDtoDelete:
@@ -82,12 +83,12 @@ def trackMultipleObjects():
 				matchCarID = None
 			
 				for carID in carTracker.keys():
-					trackedPosition = carTracker[carID].get_position()
+					pres_pos = carTracker[carID].get_position()
 					
-					t_x = int(trackedPosition.left())
-					t_y = int(trackedPosition.top())
-					t_w = int(trackedPosition.width())
-					t_h = int(trackedPosition.height())
+					t_x = int(pres_pos.left())
+					t_y = int(pres_pos.top())
+					t_w = int(pres_pos.width())
+					t_h = int(pres_pos.height())
 					
 					t_x_bar = t_x + 0.5 * t_w
 					t_y_bar = t_y + 0.5 * t_h
@@ -96,28 +97,28 @@ def trackMultipleObjects():
 						matchCarID = carID
 				
 				if matchCarID is None:
-					print ('Creating new tracker ' + str(currentCarID))
+					print ('Creating new tracker ' + str(curr_car_id))
 					
-					tracker = dlib.correlation_tracker()
-					tracker.start_track(image, dlib.rectangle(x, y, x + w, y + h))
+					trac = dlib.correlation_tracker()
+					trac.start_track(image, dlib.rectangle(x, y, x + w, y + h))
 					
-					carTracker[currentCarID] = tracker
-					carLocation1[currentCarID] = [x, y, w, h]
+					carTracker[curr_car_id] = trac
+					carLocation1[curr_car_id] = [x, y, w, h]
 
-					currentCarID = currentCarID + 1
+					curr_car_id = curr_car_id + 1
 		
 		#cv2.line(resultImage,(0,480),(1280,480),(255,0,0),5)
 
 
 		for carID in carTracker.keys():
-			trackedPosition = carTracker[carID].get_position()
+			pres_pos = carTracker[carID].get_position()
 					
-			t_x = int(trackedPosition.left())
-			t_y = int(trackedPosition.top())
-			t_w = int(trackedPosition.width())
-			t_h = int(trackedPosition.height())
+			t_x = int(pres_pos.left())
+			t_y = int(pres_pos.top())
+			t_w = int(pres_pos.width())
+			t_h = int(pres_pos.height())
 			
-			cv2.rectangle(resultImage, (t_x, t_y), (t_x + t_w, t_y + t_h), rectangleColor, 4)
+			cv2.rectangle(res_img, (t_x, t_y), (t_x + t_w, t_y + t_h), rectangleColor, 4)
 			
 			# speed estimation
 			carLocation2[carID] = [t_x, t_y, t_w, t_h]
@@ -141,11 +142,11 @@ def trackMultipleObjects():
 				# print 'new previous location: ' + str(carLocation1[i])
 				if [x1, y1, w1, h1] != [x2, y2, w2, h2]:
 					if (speed[i] == None or speed[i] == 0) and y1 >= 275 and y1 <= 285:
-						speed[i] = estimateSpeed([x1, y1, w1, h1], [x2, y2, w2, h2])
+						speed[i] = getspeed([x1, y1, w1, h1], [x2, y2, w2, h2])
 						
 					#if y1 > 275 and y1 < 285:
 					if speed[i] != None and y1 >= 180:
-						cv2.putText(resultImage, str(int(speed[i])) + " km/hr", (int(x1 + w1/2), int(y1-5)),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2)
+						cv2.putText(res_img, str(int(speed[i])) + " km/hr", (int(x1 + w1/2), int(y1-5)),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2)
 					
 					#print ('CarID ' + str(i) + ': speed is ' + str("%.2f" % round(speed[i], 0)) + ' km/h.\n')
 
@@ -153,7 +154,7 @@ def trackMultipleObjects():
 					#	cv2.putText(resultImage, "Far Object", (int(x1 + w1/2), int(y1)),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
 						#print ('CarID ' + str(i) + ' Location1: ' + str(carLocation1[i]) + ' Location2: ' + str(carLocation2[i]) + ' speed is ' + str("%.2f" % round(speed[i], 0)) + ' km/h.\n')
-		cv2.imshow('result', resultImage)
+		cv2.imshow('result', res_img)
 		# Write the frame into the file 'output.avi'
 		#out.write(resultImage)
 
